@@ -1,0 +1,534 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #1C1C1E;
+    padding: 20px;
+}
+
+/* Layout */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+.header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #E5E5EA;
+    color: #1C1C1E;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    background: #007AFF;
+    color: white;
+}
+
+.tab-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* KPI Cards */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.kpi-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    border-left: 4px solid;
+}
+
+.kpi-card.primary { 
+    border-left-color: #007AFF; 
+}
+
+.kpi-card.success { 
+    border-left-color: #30D158; 
+}
+
+.kpi-card.warning { 
+    border-left-color: #FF9F0A; 
+}
+
+.kpi-card.error { 
+    border-left-color: #FF453A; 
+}
+
+.kpi-card.purple { 
+    border-left-color: #BF5AF2; 
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+}
+
+.kpi-card.clickable {
+    cursor: pointer;
+    position: relative;
+}
+
+.kpi-card.clickable::after {
+    content: '👆 Tıklayınız';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.7em;
+    color: #007AFF;
+    font-weight: 600;
+}
+
+.kpi-title {
+    font-size: 0.9em;
+    color: #8E8E93;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+}
+
+.kpi-value {
+    font-size: 2.4em;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.1;
+}
+
+.kpi-subtitle {
+    color: #8E8E93;
+    font-size: 0.9em;
+}
+
+/* Charts */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    height: 400px;
+}
+
+.chart-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+/* Analysis Panels */
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.analysis-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #E5E5EA;
+}
+
+.panel-title {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.panel-count {
+    background: #007AFF;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+/* Store Lists */
+.store-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.store-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.store-item:hover {
+    background: rgba(0, 122, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px 8px;
+}
+
+.store-info h4 {
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-bottom: 4px;
+}
+
+.store-info p {
+    font-size: 0.8em;
+    color: #8E8E93;
+}
+
+.store-metrics {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.status-iyi {
+    background: rgba(48, 209, 88, 0.1);
+    color: #30D158;
+}
+
+.status-orta {
+    background: rgba(255, 159, 10, 0.1);
+    color: #FF9F0A;
+}
+
+.status-kötü {
+    background: rgba(255, 69, 58, 0.1);
+    color: #FF453A;
+}
+
+.metric-large {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+/* Upload Section */
+.upload-section {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 320px;
+}
+
+/* Buttons */
+.upload-btn, .action-btn {
+    background: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin: 4px;
+    transition: background 0.3s ease;
+}
+
+.upload-btn:hover, .action-btn:hover {
+    background: #0056CC;
+}
+
+#uploadStatus {
+    font-size: 0.8em;
+    text-align: center;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+}
+
+/* Filter Section */
+.filter-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-controls select, .filter-controls input {
+    padding: 8px 12px;
+    border: 1px solid #E5E5EA;
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+
+/* Turkey Map */
+.turkey-map {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
+}
+
+.map-container {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    background: #f5f5f7;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.city-marker {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8em;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.city-marker:hover {
+    transform: scale(1.2);
+    z-index: 10;
+}
+
+/* Comparison */
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.comparison-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #E5E5EA;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin: 4px;
+}
+
+.badge-gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+}
+
+.badge-silver {
+    background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+    color: #000;
+}
+
+.badge-bronze {
+    background: linear-gradient(135deg, #CD7F32, #8B4513);
+    color: #fff;
+}
+
+/* League Table */
+.league-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.league-table th, .league-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #E5E5EA;
+}
+
+.league-table th {
+    background: #f5f5f7;
+    font-weight: 600;
+}
+
+.league-table tr:hover {
+    background: rgba(0, 122, 255, 0.05);
+}
+
+/* Photo Gallery */
+.photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.photo-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 1;
+    background: #f5f5f7;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .kpi-grid, .charts-grid, .analysis-grid, .comparison-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .upload-section {
+        position: relative;
+        margin: 20px 0;
+        max-width: 100%;
+    }
+
+    .tab-navigation {
+        overflow-x: auto;
+    }
+}
