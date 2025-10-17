@@ -1,13 +1,1320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Store Audit Dashboard V2</title>
+    <title>Mağaza Denetim Dashboard'u</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/echarts@5/map/js/turkey.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #5A1FB9, #1F6CB9);
+            --card-bg: rgba(255, 255, 255, 0.82);
+            --card-blur: blur(12px);
+            --text-primary: #1f2937;
+            --text-muted: #6b7280;
+            --accent: #5A1FB9;
+            --accent-soft: rgba(90, 31, 185, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 32px 24px 16px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        header p {
+            font-size: 16px;
+            max-width: 640px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .upload-panel {
+            background: var(--card-bg);
+            backdrop-filter: var(--card-blur);
+            border-radius: 18px;
+            margin: 0 24px 24px;
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+        }
+
+        .upload-panel label {
+            font-weight: 600;
+        }
+
+        .upload-input {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(90, 31, 185, 0.25);
+            color: var(--accent);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .upload-input:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(90, 31, 185, 0.2);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            padding: 0 24px 24px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.18);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--accent);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        main {
+            flex: 1;
+            padding: 0 24px 48px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .kpi-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--card-blur);
+            border-radius: 18px;
+            padding: 20px 24px;
+            box-shadow: 0 25px 50px rgba(15, 23, 42, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .card .value {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .clickable {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .clickable:hover {
+            transform: translateY(-4px);
+        }
+
+        .charts-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        canvas, .chart-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-card {
+            height: 320px;
+        }
+
+        #map {
+            width: 100%;
+            height: 520px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            max-width: 640px;
+            width: 100%;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .close-btn {
+            background: rgba(99, 102, 241, 0.12);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+            font-size: 14px;
+        }
+
+        th {
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(90, 31, 185, 0.1);
+            color: var(--accent);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .store-select-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        select, button {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button.primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(90, 31, 185, 0.25);
+        }
+
+        .comparison-result {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .comparison-card {
+            background: var(--card-bg);
+            backdrop-filter: var(--card-blur);
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+        }
+
+        .comparison-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .comparison-card .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .analysis-box {
+            background: rgba(255,255,255,0.9);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 20px 40px rgba(15,23,42,0.15);
+            line-height: 1.6;
+        }
+
+        .photo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .photo-card {
+            position: relative;
+            background: rgba(255,255,255,0.95);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(15,23,42,0.2);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .photo-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(15,23,42,0.85);
+            color: white;
+            font-size: 14px;
+        }
+
+        .photo-actions button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        .photo-counter {
+            font-weight: 600;
+            color: white;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 999px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 24px 16px 12px;
+            }
+
+            .upload-panel {
+                margin: 0 16px 16px;
+                padding: 16px;
+            }
+
+            .tabs {
+                padding: 0 16px 16px;
+            }
+
+            main {
+                padding: 0 16px 32px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            #map {
+                height: 420px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Store Audit Dashboard V2</h1>
-    <p>Timestamp: 2025-10-17 06:06:10</p>
-    <p>User Login: yvsr94wdg4-sys</p>
+    <header>
+        <h1>Mağaza Denetim Kontrol Paneli</h1>
+        <p>Türkiye genelindeki mağaza denetim performanslarını tek ekrandan takip edin. KPI kartlarına tıklayarak detaylı listeleri görün, coğrafi dağılımı inceleyin, mağazaları karşılaştırın, istatistiksel içgörüler elde edin ve mağaza fotoğraflarını yönetin.</p>
+    </header>
+
+    <section class="upload-panel">
+        <label for="excelInput">Excel Yükle (Tarih, Mağaza, Şehir, Puan, Zayıf Alan)</label>
+        <label class="upload-input">
+            <span>📁 Dosya Seç</span>
+            <input id="excelInput" type="file" accept=".xlsx,.xls" style="display:none">
+        </label>
+        <div id="uploadStatus" class="photo-counter">Hazır veri seti kullanılıyor</div>
+    </section>
+
+    <nav class="tabs">
+        <div class="tab active" data-tab="overview">📊 Genel Bakış</div>
+        <div class="tab" data-tab="geo">🗺️ Coğrafi Analiz</div>
+        <div class="tab" data-tab="compare">⚖️ Karşılaştırma</div>
+        <div class="tab" data-tab="stats">📈 İstatistikler</div>
+        <div class="tab" data-tab="league">🏆 Mağaza Ligi</div>
+        <div class="tab" data-tab="photos">📷 Fotoğraflar</div>
+    </nav>
+
+    <main>
+        <section class="tab-content active" id="overview">
+            <div class="grid kpi-grid" id="kpiGrid"></div>
+            <div class="grid charts-grid" style="margin-top: 24px;">
+                <div class="card chart-card"><h3>En Zayıf Alanlar</h3><div style="flex:1"><canvas id="weakAreasChart"></canvas></div></div>
+                <div class="card chart-card"><h3>Aylık Trend</h3><div style="flex:1"><canvas id="monthlyTrendChart"></canvas></div></div>
+                <div class="card chart-card"><h3>Performans Dağılımı</h3><div style="flex:1"><canvas id="performanceDistributionChart"></canvas></div></div>
+                <div class="card chart-card"><h3>En İyi Performans</h3><div style="flex:1"><canvas id="topPerformanceChart"></canvas></div></div>
+            </div>
+        </section>
+
+        <section class="tab-content" id="geo">
+            <div class="card" style="margin-bottom: 24px;">
+                <h3>Türkiye Haritası</h3>
+                <div id="map"></div>
+            </div>
+            <div class="grid charts-grid">
+                <div class="card chart-card"><h3>Şehir Performansı</h3><div style="flex:1"><canvas id="cityPerformanceChart"></canvas></div></div>
+                <div class="card chart-card"><h3>Bölge Dağılımı</h3><div style="flex:1"><canvas id="regionDistributionChart"></canvas></div></div>
+                <div class="card">
+                    <h3>En İyi / Kötü Bölge</h3>
+                    <div class="grid" id="regionKpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-content" id="compare">
+            <div class="card" style="margin-bottom: 24px;">
+                <h3>Mağaza Seçimi</h3>
+                <div class="store-select-group">
+                    <select id="storeSelectA"></select>
+                    <select id="storeSelectB"></select>
+                    <button id="compareBtn" class="primary">Karşılaştır</button>
+                </div>
+            </div>
+            <div class="grid" style="gap:20px;">
+                <div class="comparison-result" id="comparisonCards"></div>
+                <div class="analysis-box" id="comparisonAnalysis">Karşılaştırma için mağaza seçiniz.</div>
+            </div>
+        </section>
+
+        <section class="tab-content" id="stats">
+            <div class="grid kpi-grid" id="statsKpis"></div>
+            <div class="grid charts-grid" style="margin-top: 24px;">
+                <div class="card chart-card"><h3>Puan Histogramı</h3><div id="histogram"></div></div>
+                <div class="card chart-card"><h3>Box Plot</h3><div id="boxplot"></div></div>
+            </div>
+        </section>
+
+        <section class="tab-content" id="league">
+            <div class="card">
+                <h3>Mağaza Ligi</h3>
+                <div class="legend" style="display:flex; gap:16px; margin-bottom:12px;">
+                    <div class="legend-item"><div class="legend-color" style="background:#16a34a"></div>95+ Çok İyi</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#fbbf24"></div>90+ Altın Yıldız</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#38bdf8"></div>3+ Denetim Deneyimli</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#a855f7"></div>Tümü İyi Mükemmel</div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Mağaza</th><th>Şehir</th><th>Puan</th><th>Rozetler</th><th>Durum</th></tr>
+                        </thead>
+                        <tbody id="leagueTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-content" id="photos">
+            <div class="card">
+                <h3>Fotoğraf Yönetimi</h3>
+                <div class="photo-controls">
+                    <select id="photoStoreSelect"></select>
+                    <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+                    <button id="addPhotoBtn" class="primary" disabled>Fotoğraf Ekle</button>
+                    <div id="photoCounter" class="photo-counter">0/50 fotoğraf</div>
+                </div>
+                <div class="photos-grid" id="photosGrid"></div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Detay</h2>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="imageModal" style="z-index:1100;">
+        <div class="modal" style="max-width:520px;">
+            <div class="modal-header">
+                <h2>Fotoğraf Önizleme</h2>
+                <button class="close-btn" id="closeImageModal">×</button>
+            </div>
+            <img id="previewImage" src="" alt="Fotoğraf" style="width:100%; border-radius:12px;">
+        </div>
+    </div>
+
+    <script>
+        const regions = {
+            "Marmara": ["İstanbul", "Bolu", "Bursa", "Kocaeli", "Sakarya"],
+            "Ege": ["İzmir", "Aydın", "Denizli", "Muğla"],
+            "Akdeniz": ["Antalya"],
+            "İç Anadolu": ["Ankara"],
+            "Karadeniz": ["Trabzon", "Tokat", "Samsun"],
+            "Doğu Anadolu": ["Erzurum"],
+            "Güneydoğu Anadolu": ["Gaziantep", "Şanlıurfa", "Diyarbakır"]
+        };
+
+        const cityCoordinates = {
+            "İstanbul": [28.9784, 41.0082],
+            "Ankara": [32.8597, 39.9334],
+            "İzmir": [27.1428, 38.4237],
+            "Aydın": [27.8458, 37.8444],
+            "Bolu": [31.6116, 40.7350],
+            "Erzurum": [41.2769, 39.9043],
+            "Gaziantep": [37.3781, 37.0662],
+            "Şanlıurfa": [38.7928, 37.1674],
+            "Trabzon": [39.7200, 41.0031],
+            "Tokat": [36.5544, 40.3167],
+            "Denizli": [29.0875, 37.7765],
+            "Diyarbakır": [40.2306, 37.9100],
+            "Samsun": [36.3361, 41.2867],
+            "Kocaeli": [29.9500, 40.8533],
+            "Sakarya": [30.3950, 40.7600],
+            "Muğla": [28.3667, 37.2167],
+            "Bursa": [29.0600, 40.1950],
+            "Antalya": [30.7133, 36.8969]
+        };
+
+        const defaultRecords = [
+            { Tarih: '2025-01-12', Mağaza: 'İstanbul Merkez', Şehir: 'İstanbul', Puan: 96, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-02-18', Mağaza: 'İstanbul Merkez', Şehir: 'İstanbul', Puan: 93, 'Zayıf Alan': 'Eğitim' },
+            { Tarih: '2025-03-20', Mağaza: 'İstanbul Merkez', Şehir: 'İstanbul', Puan: 98, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-01-25', Mağaza: 'Ankara Optimum', Şehir: 'Ankara', Puan: 88, 'Zayıf Alan': 'Stok Yönetimi' },
+            { Tarih: '2025-03-05', Mağaza: 'Ankara Optimum', Şehir: 'Ankara', Puan: 91, 'Zayıf Alan': 'Görsel Düzen' },
+            { Tarih: '2025-02-11', Mağaza: 'İzmir Agora', Şehir: 'İzmir', Puan: 85, 'Zayıf Alan': 'Müşteri Deneyimi' },
+            { Tarih: '2025-03-22', Mağaza: 'İzmir Agora', Şehir: 'İzmir', Puan: 87, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-01-30', Mağaza: 'Aydın Forum', Şehir: 'Aydın', Puan: 92, 'Zayıf Alan': 'Eğitim' },
+            { Tarih: '2025-02-26', Mağaza: 'Bolu Highway', Şehir: 'Bolu', Puan: 72, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-03-18', Mağaza: 'Erzurum Palandöken', Şehir: 'Erzurum', Puan: 78, 'Zayıf Alan': 'Stok Yönetimi' },
+            { Tarih: '2025-01-14', Mağaza: 'Gaziantep Forum', Şehir: 'Gaziantep', Puan: 83, 'Zayıf Alan': 'Eğitim' },
+            { Tarih: '2025-03-09', Mağaza: 'Gaziantep Forum', Şehir: 'Gaziantep', Puan: 86, 'Zayıf Alan': 'Müşteri Deneyimi' },
+            { Tarih: '2025-02-03', Mağaza: 'Şanlıurfa Piazza', Şehir: 'Şanlıurfa', Puan: 74, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-03-27', Mağaza: 'Trabzon Meydan', Şehir: 'Trabzon', Puan: 89, 'Zayıf Alan': 'Stok Yönetimi' },
+            { Tarih: '2025-02-15', Mağaza: 'Tokat Novada', Şehir: 'Tokat', Puan: 76, 'Zayıf Alan': 'Görsel Düzen' },
+            { Tarih: '2025-03-12', Mağaza: 'Denizli Teras', Şehir: 'Denizli', Puan: 82, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-01-08', Mağaza: 'Diyarbakır Ceylan', Şehir: 'Diyarbakır', Puan: 69, 'Zayıf Alan': 'Müşteri Deneyimi' },
+            { Tarih: '2025-03-16', Mağaza: 'Samsun Piazza', Şehir: 'Samsun', Puan: 94, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-02-21', Mağaza: 'Kocaeli Symbol', Şehir: 'Kocaeli', Puan: 88, 'Zayıf Alan': 'Satış Yetkinliği' },
+            { Tarih: '2025-03-25', Mağaza: 'Sakarya Ada', Şehir: 'Sakarya', Puan: 90, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-03-30', Mağaza: 'Muğla Rüya', Şehir: 'Muğla', Puan: 95, 'Zayıf Alan': 'Stok Yönetimi' },
+            { Tarih: '2025-02-02', Mağaza: 'Bursa Kent', Şehir: 'Bursa', Puan: 97, 'Zayıf Alan': 'Hijyen' },
+            { Tarih: '2025-03-11', Mağaza: 'Antalya TerraCity', Şehir: 'Antalya', Puan: 84, 'Zayıf Alan': 'Eğitim' }
+        ];
+
+        let records = [...defaultRecords];
+        let storeStats = new Map();
+        let cityStats = new Map();
+        let photoLibrary = {};
+        let charts = {};
+        let mapInstance;
+
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+                if (tab.dataset.tab === 'geo') {
+                    setTimeout(() => mapInstance && mapInstance.resize(), 150);
+                }
+            });
+        });
+
+        function parseDate(value) {
+            if (!value) return new Date();
+            if (value instanceof Date) return value;
+            if (typeof value === 'number') {
+                if (window.XLSX && XLSX.SSF && typeof XLSX.SSF.parse_date_code === 'function') {
+                    const parsed = XLSX.SSF.parse_date_code(value);
+                    if (parsed) return new Date(parsed.y, parsed.m - 1, parsed.d);
+                }
+                return new Date(value);
+            }
+            const parts = String(value).split('-');
+            if (parts.length === 3) {
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
+            const alt = String(value).split('.');
+            if (alt.length === 3) {
+                return new Date(alt[2], alt[1] - 1, alt[0]);
+            }
+            return new Date(value);
+        }
+
+        function computeStats() {
+            storeStats = new Map();
+            cityStats = new Map();
+            records.forEach(rec => {
+                const score = Number(rec.Puan);
+                if (!storeStats.has(rec.Mağaza)) {
+                    storeStats.set(rec.Mağaza, {
+                        name: rec.Mağaza,
+                        city: rec.Şehir,
+                        scores: [],
+                        dates: [],
+                        weakAreas: new Map()
+                    });
+                }
+                const s = storeStats.get(rec.Mağaza);
+                s.scores.push(score);
+                s.dates.push(parseDate(rec.Tarih));
+                s.weakAreas.set(rec['Zayıf Alan'], (s.weakAreas.get(rec['Zayıf Alan']) || 0) + 1);
+
+                if (!cityStats.has(rec.Şehir)) {
+                    cityStats.set(rec.Şehir, {
+                        city: rec.Şehir,
+                        scores: [],
+                        stores: new Set(),
+                        records: []
+                    });
+                }
+                const c = cityStats.get(rec.Şehir);
+                c.scores.push(score);
+                c.stores.add(rec.Mağaza);
+                c.records.push(rec);
+            });
+
+            storeStats.forEach(stat => {
+                const sorted = stat.dates.map((date, idx) => ({ date, score: stat.scores[idx] }))
+                    .sort((a, b) => a.date - b.date);
+                stat.total = stat.scores.length;
+                stat.average = stat.scores.reduce((a, b) => a + b, 0) / stat.total;
+                stat.max = Math.max(...stat.scores);
+                stat.min = Math.min(...stat.scores);
+                stat.last = sorted[sorted.length - 1].score;
+                stat.lastDate = sorted[sorted.length - 1].date;
+                stat.previous = sorted.length > 1 ? sorted[sorted.length - 2].score : null;
+                stat.change = stat.previous !== null ? stat.last - stat.previous : null;
+                stat.allGood = stat.scores.every(score => score >= 85);
+                stat.badges = [];
+                if (stat.last >= 95) stat.badges.push({ label: 'Çok İyi', bg: 'rgba(22,163,74,0.15)', color: '#16a34a' });
+                if (stat.average >= 90) stat.badges.push({ label: 'Altın Yıldız', bg: 'rgba(251,191,36,0.18)', color: '#b45309' });
+                if (stat.total >= 3) stat.badges.push({ label: 'Deneyimli', bg: 'rgba(56,189,248,0.18)', color: '#0ea5e9' });
+                if (stat.allGood) stat.badges.push({ label: 'Mükemmel', bg: 'rgba(168,85,247,0.18)', color: '#7c3aed' });
+            });
+
+            cityStats.forEach(stat => {
+                stat.total = stat.scores.length;
+                stat.average = stat.scores.reduce((a, b) => a + b, 0) / stat.total;
+                stat.bestStore = [...stat.stores].sort((a, b) => (storeStats.get(b).average - storeStats.get(a).average))[0];
+            });
+        }
+
+        function scoreCategory(score) {
+            if (score >= 95) return 'veryGood';
+            if (score >= 85) return 'good';
+            if (score >= 75) return 'mid';
+            return 'bad';
+        }
+
+        function formatChange(value) {
+            if (value === null) return '—';
+            const sign = value > 0 ? '+' : '';
+            const formatted = `${sign}${value.toFixed(1)}`;
+            return `<span style="color:${value >= 0 ? '#16a34a' : '#dc2626'}">${formatted}</span>`;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function updateKpis() {
+            const totalAudits = records.length;
+            const averageScore = records.reduce((sum, rec) => sum + Number(rec.Puan), 0) / Math.max(totalAudits, 1);
+            const multiStores = [...storeStats.values()].filter(stat => stat.total > 1);
+            const singleStores = [...storeStats.values()].filter(stat => stat.total === 1);
+            const counts = { veryGood: 0, good: 0, mid: 0, bad: 0 };
+            records.forEach(rec => counts[scoreCategory(Number(rec.Puan))]++);
+
+            const kpiData = [
+                { label: 'Toplam Denetim', value: totalAudits },
+                { label: 'Ortalama Puan', value: averageScore.toFixed(1) },
+                { label: 'Çoklu Denetim', value: multiStores.length, clickable: true, handler: () => openStoreModal('Çoklu Denetimli Mağazalar', multiStores, 'multi') },
+                { label: 'Tekli Denetim', value: singleStores.length, clickable: true, handler: () => openStoreModal('Tek Denetimli Mağazalar', singleStores, 'single') },
+                { label: 'Çok İyi (95+)', value: counts.veryGood },
+                { label: 'İyi (85-94.99)', value: counts.good },
+                { label: 'Orta (75-84.99)', value: counts.mid },
+                { label: 'Kötü (0-74.99)', value: counts.bad }
+            ];
+
+            const kpiGrid = document.getElementById('kpiGrid');
+            kpiGrid.innerHTML = '';
+            kpiData.forEach(kpi => {
+                const card = document.createElement('div');
+                card.className = 'card' + (kpi.clickable ? ' clickable' : '');
+                card.innerHTML = `<h3>${kpi.label}</h3><div class="value">${kpi.value}</div>`;
+                if (kpi.clickable) {
+                    card.addEventListener('click', kpi.handler);
+                }
+                kpiGrid.appendChild(card);
+            });
+        }
+
+        function openStoreModal(title, stores, mode) {
+            const modal = document.getElementById('modalOverlay');
+            document.getElementById('modalTitle').textContent = title;
+            const content = document.getElementById('modalContent');
+            if (mode === 'multi') {
+                content.innerHTML = `<table><thead><tr><th>Mağaza</th><th>Şehir</th><th>Son Puan</th><th>Değişim</th></tr></thead><tbody>
+                    ${stores.map(stat => `<tr><td>${stat.name}</td><td>${stat.city}</td><td>${stat.last.toFixed(1)}</td><td>${formatChange(stat.change)}</td></tr>`).join('')}</tbody></table>`;
+            } else {
+                content.innerHTML = `<table><thead><tr><th>Mağaza</th><th>Şehir</th><th>Puan</th><th>Tarih</th></tr></thead><tbody>
+                    ${stores.map(stat => `<tr><td>${stat.name}</td><td>${stat.city}</td><td>${stat.last.toFixed(1)}</td><td>${formatDate(stat.lastDate)}</td></tr>`).join('')}</tbody></table>`;
+            }
+            modal.classList.add('active');
+        }
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('modalOverlay').classList.remove('active');
+        });
+
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') {
+                e.currentTarget.classList.remove('active');
+            }
+        });
+
+        function initCharts() {
+            const weakCtx = document.getElementById('weakAreasChart');
+            charts.weakAreas = new Chart(weakCtx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#f97316','#22d3ee','#6366f1','#facc15','#34d399','#f472b6'] }] },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+
+            const monthlyCtx = document.getElementById('monthlyTrendChart');
+            charts.monthlyTrend = new Chart(monthlyCtx, {
+                data: {
+                    labels: [],
+                    datasets: [
+                        { type: 'line', label: 'Ortalama Puan', data: [], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.25)', yAxisID: 'y1', tension: 0.35, fill: true },
+                        { type: 'bar', label: 'Denetim Sayısı', data: [], backgroundColor: '#f97316', yAxisID: 'y2', borderRadius: 8 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y1: { type: 'linear', position: 'left', beginAtZero: true, suggestedMax: 100 },
+                        y2: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+
+            const distributionCtx = document.getElementById('performanceDistributionChart');
+            charts.distribution = new Chart(distributionCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Mağaza Sayısı', data: [], backgroundColor: '#22d3ee', borderRadius: 8 }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+            const topCtx = document.getElementById('topPerformanceChart');
+            charts.topPerformance = new Chart(topCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Ortalama Puan', data: [], backgroundColor: '#34d399', borderRadius: 8 }] },
+                options: { indexAxis: 'y', scales: { x: { beginAtZero: true, suggestedMax: 100 } } }
+            });
+
+            const cityCtx = document.getElementById('cityPerformanceChart');
+            charts.cityPerformance = new Chart(cityCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Ortalama Puan', data: [], backgroundColor: '#6366f1', borderRadius: 8 }] },
+                options: { scales: { y: { beginAtZero: true, suggestedMax: 100 } } }
+            });
+
+            const regionCtx = document.getElementById('regionDistributionChart');
+            charts.regionDistribution = new Chart(regionCtx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#f472b6','#22d3ee','#a855f7','#f97316','#34d399','#fb7185','#60a5fa'] }] },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function updateCharts() {
+            const weakMap = {};
+            records.forEach(rec => {
+                weakMap[rec['Zayıf Alan']] = (weakMap[rec['Zayıf Alan']] || 0) + 1;
+            });
+            charts.weakAreas.data.labels = Object.keys(weakMap);
+            charts.weakAreas.data.datasets[0].data = Object.values(weakMap);
+            charts.weakAreas.update();
+
+            const monthly = {};
+            records.forEach(rec => {
+                const date = parseDate(rec.Tarih);
+                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthly[key]) monthly[key] = [];
+                monthly[key].push(Number(rec.Puan));
+            });
+            const monthlyKeys = Object.keys(monthly).sort();
+            charts.monthlyTrend.data.labels = monthlyKeys;
+            charts.monthlyTrend.data.datasets[0].data = monthlyKeys.map(key => monthly[key].reduce((a,b)=>a+b,0)/monthly[key].length);
+            charts.monthlyTrend.data.datasets[1].data = monthlyKeys.map(key => monthly[key].length);
+            charts.monthlyTrend.update();
+
+            const buckets = {
+                '0-74': records.filter(rec => rec.Puan < 75).length,
+                '75-84': records.filter(rec => rec.Puan >= 75 && rec.Puan < 85).length,
+                '85-94': records.filter(rec => rec.Puan >= 85 && rec.Puan < 95).length,
+                '95-100': records.filter(rec => rec.Puan >= 95).length
+            };
+            charts.distribution.data.labels = Object.keys(buckets);
+            charts.distribution.data.datasets[0].data = Object.values(buckets);
+            charts.distribution.update();
+
+            const topStores = [...storeStats.values()].sort((a,b)=>b.average-a.average).slice(0,5);
+            charts.topPerformance.data.labels = topStores.map(stat => stat.name);
+            charts.topPerformance.data.datasets[0].data = topStores.map(stat => Number(stat.average.toFixed(1)));
+            charts.topPerformance.update();
+
+            const cities = [...cityStats.values()].sort((a,b)=>b.average-a.average);
+            charts.cityPerformance.data.labels = cities.map(city => city.city);
+            charts.cityPerformance.data.datasets[0].data = cities.map(city => Number(city.average.toFixed(1)));
+            charts.cityPerformance.update();
+
+            const regionScores = {};
+            Object.entries(regions).forEach(([region, cities]) => {
+                const regionRecords = records.filter(rec => cities.includes(rec.Şehir));
+                if (regionRecords.length) {
+                    regionScores[region] = regionRecords.reduce((sum, rec) => sum + Number(rec.Puan), 0) / regionRecords.length;
+                }
+            });
+            charts.regionDistribution.data.labels = Object.keys(regionScores);
+            charts.regionDistribution.data.datasets[0].data = Object.values(regionScores).map(val => Number(val.toFixed(1)));
+            charts.regionDistribution.update();
+        }
+
+        function initMap() {
+            mapInstance = echarts.init(document.getElementById('map'));
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: params => {
+                        if (params.seriesType === 'effectScatter') {
+                            return `<strong>${params.name}</strong><br>Puan: ${params.value[2].toFixed(1)}`;
+                        }
+                        return params.name;
+                    }
+                },
+                visualMap: {
+                    min: 60,
+                    max: 100,
+                    left: 'left',
+                    top: 'bottom',
+                    text: ['Yüksek','Düşük'],
+                    inRange: { color: ['#facc15', '#16a34a'] },
+                    calculable: true
+                },
+                geo: {
+                    map: 'Turkey',
+                    roam: true,
+                    itemStyle: {
+                        areaColor: '#cbd5f5',
+                        borderColor: '#312e81',
+                        borderWidth: 0.6
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            areaColor: '#818cf8'
+                        }
+                    }
+                },
+                series: [
+                    {
+                        name: 'Şehir Puanı',
+                        type: 'effectScatter',
+                        coordinateSystem: 'geo',
+                        data: [],
+                        symbolSize: val => Math.max(12, Math.min(28, val[2] / 3)),
+                        itemStyle: {
+                            color: '#f97316'
+                        }
+                    }
+                ]
+            };
+            mapInstance.setOption(option);
+            mapInstance.on('click', params => {
+                if (params.seriesType === 'effectScatter') {
+                    openCityModal(params.name);
+                }
+            });
+        }
+
+        function cityColor(score) {
+            if (score >= 95) return '#d97706';
+            if (score >= 85) return '#22c55e';
+            if (score >= 75) return '#fb923c';
+            return '#ef4444';
+        }
+
+        function updateMap() {
+            const cityData = [...cityStats.values()]
+                .filter(city => cityCoordinates[city.city])
+                .map(city => ({
+                    name: city.city,
+                    value: [...cityCoordinates[city.city], city.average],
+                    itemStyle: { color: cityColor(city.average) }
+                }));
+            mapInstance.setOption({
+                series: [{ data: cityData }]
+            });
+        }
+
+        function openCityModal(cityName) {
+            const city = cityStats.get(cityName);
+            if (!city) return;
+            const modal = document.getElementById('modalOverlay');
+            document.getElementById('modalTitle').textContent = `${cityName} Detayları`;
+            const content = document.getElementById('modalContent');
+            const average = city.average.toFixed(1);
+            const stores = [...city.stores].map(store => storeStats.get(store));
+            content.innerHTML = `
+                <p style="margin-bottom:12px;"><strong>Ortalama Puan:</strong> ${average}</p>
+                <table>
+                    <thead><tr><th>Mağaza</th><th>Denetim Sayısı</th><th>Ortalama</th><th>Son Denetim</th></tr></thead>
+                    <tbody>
+                        ${stores.map(stat => `<tr><td>${stat.name}</td><td>${stat.total}</td><td>${stat.average.toFixed(1)}</td><td>${stat.last.toFixed(1)}</td></tr>`).join('')}
+                    </tbody>
+                </table>`;
+            modal.classList.add('active');
+        }
+
+        function updateRegionKpis() {
+            const regionAverages = Object.entries(regions).map(([region, cities]) => {
+                const related = records.filter(rec => cities.includes(rec.Şehir));
+                if (!related.length) return null;
+                const avg = related.reduce((sum, rec) => sum + Number(rec.Puan), 0) / related.length;
+                return { region, average: avg, records: related };
+            }).filter(Boolean);
+            if (!regionAverages.length) return;
+            const best = [...regionAverages].sort((a,b)=>b.average-a.average)[0];
+            const worst = [...regionAverages].sort((a,b)=>a.average-b.average)[0];
+            const regionKpis = document.getElementById('regionKpis');
+            regionKpis.innerHTML = '';
+            [
+                { title: 'En İyi Bölge', data: best },
+                { title: 'En Kötü Bölge', data: worst }
+            ].forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card clickable';
+                card.innerHTML = `<h3>${item.title}</h3><div class="value">${item.data.region}</div><p style="color:var(--text-muted); font-weight:600;">Ortalama: ${item.data.average.toFixed(1)}</p>`;
+                card.addEventListener('click', () => openRegionModal(item.data));
+                regionKpis.appendChild(card);
+            });
+        }
+
+        function openRegionModal(regionData) {
+            const modal = document.getElementById('modalOverlay');
+            document.getElementById('modalTitle').textContent = `${regionData.region} Bölgesi Mağazaları`;
+            const content = document.getElementById('modalContent');
+            const grouped = {};
+            regionData.records.forEach(rec => {
+                if (!grouped[rec.Mağaza]) grouped[rec.Mağaza] = [];
+                grouped[rec.Mağaza].push(rec);
+            });
+            const rows = Object.entries(grouped).map(([store, recs]) => {
+                const avg = recs.reduce((sum, rec) => sum + Number(rec.Puan), 0) / recs.length;
+                const last = recs.sort((a,b)=>parseDate(b.Tarih)-parseDate(a.Tarih))[0];
+                return `<tr><td>${store}</td><td>${last.Şehir}</td><td>${recs.length}</td><td>${avg.toFixed(1)}</td><td>${Number(last.Puan).toFixed(1)}</td></tr>`;
+            }).join('');
+            content.innerHTML = `<table><thead><tr><th>Mağaza</th><th>Şehir</th><th>Denetim</th><th>Ortalama</th><th>Son Puan</th></tr></thead><tbody>${rows}</tbody></table>`;
+            modal.classList.add('active');
+        }
+
+        function populateComparisonSelects() {
+            const stores = [...storeStats.keys()].sort();
+            const selectA = document.getElementById('storeSelectA');
+            const selectB = document.getElementById('storeSelectB');
+            selectA.innerHTML = '<option value="">Mağaza A</option>' + stores.map(store => `<option value="${store}">${store}</option>`).join('');
+            selectB.innerHTML = '<option value="">Mağaza B</option>' + stores.map(store => `<option value="${store}">${store}</option>`).join('');
+        }
+
+        document.getElementById('compareBtn').addEventListener('click', () => {
+            const storeA = document.getElementById('storeSelectA').value;
+            const storeB = document.getElementById('storeSelectB').value;
+            if (!storeA || !storeB || storeA === storeB) {
+                document.getElementById('comparisonAnalysis').textContent = 'Lütfen farklı iki mağaza seçiniz.';
+                document.getElementById('comparisonCards').innerHTML = '';
+                return;
+            }
+            const statA = storeStats.get(storeA);
+            const statB = storeStats.get(storeB);
+            const metrics = [
+                { label: 'Ortalama', a: statA.average, b: statB.average, format: val => val.toFixed(1) },
+                { label: 'Denetim Sayısı', a: statA.total, b: statB.total, format: val => val },
+                { label: 'En Yüksek', a: statA.max, b: statB.max, format: val => val.toFixed(1) },
+                { label: 'En Düşük', a: statA.min, b: statB.min, format: val => val.toFixed(1) }
+            ];
+            const comparisonCards = document.getElementById('comparisonCards');
+            comparisonCards.innerHTML = '';
+            metrics.forEach(metric => {
+                const card = document.createElement('div');
+                card.className = 'comparison-card';
+                card.innerHTML = `<h4>${metric.label}</h4><div style="display:flex; justify-content:space-between;"><div><div style="color:var(--text-muted); font-size:12px;">${statA.name}</div><div class="value">${metric.format(metric.a)}</div></div><div><div style="color:var(--text-muted); font-size:12px; text-align:right;">${statB.name}</div><div class="value" style="text-align:right;">${metric.format(metric.b)}</div></div></div>`;
+                comparisonCards.appendChild(card);
+            });
+            const diff = statA.average - statB.average;
+            const leader = diff === 0 ? 'Her iki mağaza da benzer performansta.' : diff > 0 ? `${statA.name} ${Math.abs(diff).toFixed(1)} puan önde.` : `${statB.name} ${Math.abs(diff).toFixed(1)} puan önde.`;
+            const trend = [statA, statB].map(stat => {
+                const changeText = stat.change !== null ? `${stat.change > 0 ? 'iyileşti' : 'geriledi'} (${stat.change > 0 ? '+' : ''}${stat.change.toFixed(1)})` : 'ilk denetim';
+                return `${stat.name} son denetimde ${stat.last.toFixed(1)} puan aldı ve ${changeText}.`;
+            }).join(' ');
+            document.getElementById('comparisonAnalysis').textContent = `${leader} ${trend}`;
+        });
+
+        function calculateStatistics() {
+            const scores = records.map(rec => Number(rec.Puan));
+            if (!scores.length) return;
+            const mean = scores.reduce((a,b)=>a+b,0) / scores.length;
+            const stdDev = Math.sqrt(scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length);
+            const sorted = [...scores].sort((a,b)=>a-b);
+            const median = sorted.length % 2 === 0 ? (sorted[sorted.length/2 -1] + sorted[sorted.length/2]) / 2 : sorted[Math.floor(sorted.length/2)];
+            const frequency = {};
+            sorted.forEach(score => frequency[score] = (frequency[score] || 0) + 1);
+            const mode = Object.entries(frequency).sort((a,b)=>b[1]-a[1])[0][0];
+            const q1 = sorted[Math.floor(sorted.length / 4)];
+            const q3 = sorted[Math.floor(sorted.length * 3 / 4)];
+            const iqr = q3 - q1;
+            const lowerFence = q1 - 1.5 * iqr;
+            const upperFence = q3 + 1.5 * iqr;
+            const outliers = sorted.filter(score => score < lowerFence || score > upperFence);
+
+            const statsKpis = document.getElementById('statsKpis');
+            statsKpis.innerHTML = '';
+            [
+                { label: 'Standart Sapma', value: stdDev.toFixed(2) },
+                { label: 'Medyan', value: median.toFixed(1) },
+                { label: 'Mod', value: Number(mode).toFixed(1) },
+                { label: 'Outlier Sayısı', value: outliers.length }
+            ].forEach(kpi => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<h3>${kpi.label}</h3><div class="value">${kpi.value}</div>`;
+                statsKpis.appendChild(card);
+            });
+
+            const bins = [60, 70, 75, 80, 85, 90, 95, 100];
+            const binCounts = new Array(bins.length - 1).fill(0);
+            scores.forEach(score => {
+                for (let i = 0; i < bins.length - 1; i++) {
+                    if (score >= bins[i] && score < bins[i+1]) {
+                        binCounts[i]++;
+                        return;
+                    }
+                }
+                if (score === bins[bins.length-1]) {
+                    binCounts[binCounts.length-1]++;
+                }
+            });
+            const histogramData = [{
+                x: bins.slice(0, -1).map((bin, idx) => `${bin}-${bins[idx+1]}`),
+                y: binCounts,
+                type: 'bar',
+                marker: { color: '#6366f1' }
+            }];
+            Plotly.newPlot('histogram', histogramData, { margin: { t: 10, r: 10, l: 30, b: 30 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }, {displayModeBar:false});
+
+            const boxData = [{
+                y: scores,
+                type: 'box',
+                boxpoints: 'suspectedoutliers',
+                marker: { color: '#f97316' },
+                line: { color: '#f97316' }
+            }];
+            Plotly.newPlot('boxplot', boxData, { margin: { t: 10, r: 10, l: 30, b: 30 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }, {displayModeBar:false});
+        }
+
+        function updateLeague() {
+            const leagueData = [...storeStats.values()].sort((a,b)=>b.average-a.average);
+            const tbody = document.getElementById('leagueTable');
+            tbody.innerHTML = leagueData.map((stat, idx) => {
+                const badges = stat.badges.map(badge => `<span class="badge" style="background:${badge.bg};color:${badge.color};">${badge.label}</span>`).join('');
+                const status = stat.last >= 95 ? 'Mükemmel' : stat.last >= 85 ? 'İyi' : stat.last >= 75 ? 'Orta' : 'Kritik';
+                return `<tr><td>${idx + 1}</td><td>${stat.name}</td><td>${stat.city}</td><td>${stat.average.toFixed(1)}</td><td>${badges}</td><td>${status}</td></tr>`;
+            }).join('');
+        }
+
+        function populatePhotoStores() {
+            const select = document.getElementById('photoStoreSelect');
+            const stores = [...storeStats.keys()].sort();
+            select.innerHTML = '<option value="">Mağaza Seçiniz</option>' + stores.map(store => `<option value="${store}">${store}</option>`).join('');
+        }
+
+        document.getElementById('photoStoreSelect').addEventListener('change', (e) => {
+            const store = e.target.value;
+            const addBtn = document.getElementById('addPhotoBtn');
+            if (store) {
+                addBtn.disabled = false;
+                updatePhotoCounter();
+                renderPhotos();
+            } else {
+                addBtn.disabled = true;
+                document.getElementById('photoCounter').textContent = '0/50 fotoğraf';
+                document.getElementById('photosGrid').innerHTML = '';
+            }
+        });
+
+        document.getElementById('addPhotoBtn').addEventListener('click', () => {
+            document.getElementById('photoInput').click();
+        });
+
+        document.getElementById('photoInput').addEventListener('change', async (event) => {
+            const store = document.getElementById('photoStoreSelect').value;
+            if (!store) return;
+            const files = Array.from(event.target.files || []);
+            if (!photoLibrary[store]) photoLibrary[store] = [];
+            for (const file of files) {
+                if (photoLibrary[store].length >= 50) {
+                    alert('Fotoğraf limiti doldu (50).');
+                    break;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    photoLibrary[store].push({
+                        id: `${store}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                        name: file.name,
+                        url: e.target.result
+                    });
+                    renderPhotos();
+                    updatePhotoCounter();
+                };
+                reader.readAsDataURL(file);
+            }
+            event.target.value = '';
+        });
+
+        function updatePhotoCounter() {
+            const store = document.getElementById('photoStoreSelect').value;
+            const count = photoLibrary[store] ? photoLibrary[store].length : 0;
+            document.getElementById('photoCounter').textContent = `${count}/50 fotoğraf`;
+        }
+
+        function renderPhotos() {
+            const store = document.getElementById('photoStoreSelect').value;
+            const grid = document.getElementById('photosGrid');
+            if (!store || !photoLibrary[store]) {
+                grid.innerHTML = '';
+                return;
+            }
+            grid.innerHTML = photoLibrary[store].map(photo => `
+                <div class="photo-card">
+                    <img src="${photo.url}" alt="${photo.name}">
+                    <div class="photo-actions">
+                        <button data-action="view" data-id="${photo.id}" title="Görüntüle">👁️</button>
+                        <a href="${photo.url}" download="${photo.name}" title="İndir" style="color:white; text-decoration:none;">⬇️</a>
+                        <button data-action="delete" data-id="${photo.id}" title="Sil">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('photosGrid').addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.dataset.action === 'delete') {
+                const store = document.getElementById('photoStoreSelect').value;
+                photoLibrary[store] = photoLibrary[store].filter(photo => photo.id !== target.dataset.id);
+                renderPhotos();
+                updatePhotoCounter();
+            }
+            if (target.dataset.action === 'view') {
+                const store = document.getElementById('photoStoreSelect').value;
+                const photo = photoLibrary[store].find(p => p.id === target.dataset.id);
+                if (photo) {
+                    document.getElementById('previewImage').src = photo.url;
+                    document.getElementById('imageModal').classList.add('active');
+                }
+            }
+        });
+
+        document.getElementById('closeImageModal').addEventListener('click', () => {
+            document.getElementById('imageModal').classList.remove('active');
+        });
+
+        document.getElementById('imageModal').addEventListener('click', (e) => {
+            if (e.target.id === 'imageModal') {
+                e.currentTarget.classList.remove('active');
+            }
+        });
+
+        document.getElementById('excelInput').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+                    const parsed = json.map(row => ({
+                        Tarih: row['Tarih'] || row['Date'],
+                        Mağaza: row['Mağaza'] || row['Store'],
+                        Şehir: row['Şehir'] || row['City'],
+                        Puan: Number(row['Puan'] || row['Score'] || 0),
+                        'Zayıf Alan': row['Zayıf Alan'] || row['Weak Area'] || 'Belirtilmedi'
+                    })).filter(item => item.Tarih && item.Mağaza && item.Şehir);
+                    if (!parsed.length) throw new Error('Geçerli veri bulunamadı.');
+                    records = parsed;
+                    computeStats();
+                    refreshAll();
+                    document.getElementById('uploadStatus').textContent = `${file.name} yüklendi (${parsed.length} kayıt)`;
+                } catch (error) {
+                    console.error(error);
+                    alert('Dosya okunamadı. Lütfen formatı kontrol edin.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function refreshAll() {
+            computeStats();
+            updateKpis();
+            updateCharts();
+            updateRegionKpis();
+            populateComparisonSelects();
+            calculateStatistics();
+            updateLeague();
+            populatePhotoStores();
+            updateMap();
+        }
+
+        window.addEventListener('resize', () => {
+            mapInstance && mapInstance.resize();
+        });
+
+        initCharts();
+        initMap();
+        refreshAll();
+    </script>
 </body>
 </html>
