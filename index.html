@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mağaza Denetim Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 Mağaza Denetim Dashboard</h1>
+            <p>Executive Analytics & Performance Insights</p>
+        </div>
+
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('overview')">📊 Genel Bakış</button>
+            <button class="tab-btn" onclick="switchTab('geography')">🗺️ Coğrafi Analiz</button>
+            <button class="tab-btn" onclick="switchTab('comparison')">⚖️ Karşılaştırma</button>
+            <button class="tab-btn" onclick="switchTab('statistics')">📈 İstatistikler</button>
+            <button class="tab-btn" onclick="switchTab('league')">🏆 Mağaza Ligi</button>
+            <button class="tab-btn" onclick="switchTab('photos')">📷 Fotoğraf Galerisi</button>
+        </div>
+
+        <!-- GENEL BAKIŞ TAB -->
+        <div id="overview" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card primary">
+                    <div class="kpi-title">Toplam Denetim</div>
+                    <div class="kpi-value" id="totalAudits">22</div>
+                    <div class="kpi-subtitle">Mağaza denetimi tamamlandı</div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="kpi-title">Ortalama Puan</div>
+                    <div class="kpi-value" id="avgScore">85.1</div>
+                    <div class="kpi-subtitle">Genel performans ortalaması</div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-title">İyi Durumda</div>
+                    <div class="kpi-value" id="goodStores">14</div>
+                    <div class="kpi-subtitle">İyi kategorisindeki mağazalar</div>
+                </div>
+                <div class="kpi-card error">
+                    <div class="kpi-title">Dikkat Gereken</div>
+                    <div class="kpi-value" id="alertStores">8</div>
+                    <div class="kpi-subtitle">Orta ve kötü durumda</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">En Zayıf Alanlar</div>
+                    <canvas id="weakAreasChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Aylık Trend Analizi</div>
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Mağaza Performans Dağılımı</div>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">En İyi Performans</div>
+                    <canvas id="topStoresChart"></canvas>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <label><strong>Filtreleme:</strong></label>
+                    <select id="monthFilter" onchange="filterAudits()">
+                        <option value="">Tüm Aylar</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterAudits()">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="İyi">İyi</option>
+                        <option value="Orta">Orta</option>
+                        <option value="Kötü">Kötü</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="analysis-panel" style="margin-bottom: 40px;">
+                <div class="panel-header">
+                    <div class="panel-title">Tüm Denetimler</div>
+                    <div class="panel-count" id="allAuditsCount">22</div>
+                </div>
+                <div class="store-list" id="allAuditsList" style="max-height: 500px;"></div>
+            </div>
+
+            <div class="analysis-grid">
+                <div class="analysis-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">En İyi Performans</div>
+                        <div class="panel-count" id="topCount">5</div>
+                    </div>
+                    <div class="store-list" id="topStores"></div>
+                </div>
+                <div class="analysis-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Yüksek Risk</div>
+                        <div class="panel-count" id="riskCount">6</div>
+                    </div>
+                    <div class="store-list" id="riskStores"></div>
+                </div>
+                <div class="analysis-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">İyileşme Trendi</div>
+                        <div class="panel-count" id="improvementCount">0</div>
+                    </div>
+                    <div class="store-list" id="improvementStores"></div>
+                </div>
+                <div class="analysis-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Kritik Bulgular</div>
+                        <div class="panel-count" id="criticalCount">38</div>
+                    </div>
+                    <div class="store-list" id="criticalFindings"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COĞRAFİ ANALİZ TAB -->
+        <div id="geography" class="tab-content">
+            <div class="turkey-map">
+                <h2 style="margin-bottom: 20px;">🗺️ Türkiye Mağaza Haritası</h2>
+                <div class="map-container" id="turkeyMap"></div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card success">
+                    <div class="kpi-title">En İyi Bölge</div>
+                    <div class="kpi-value" id="bestRegion">-</div>
+                    <div class="kpi-subtitle" id="bestRegionScore">Ortalama puan</div>
+                </div>
+                <div class="kpi-card error">
+                    <div class="kpi-title">En Kötü Bölge</div>
+                    <div class="kpi-value" id="worstRegion">-</div>
+                    <div class="kpi-subtitle" id="worstRegionScore">Ortalama puan</div>
+                </div>
+                <div class="kpi-card primary">
+                    <div class="kpi-title">Toplam Şehir</div>
+                    <div class="kpi-value" id="totalCities">0</div>
+                    <div class="kpi-subtitle">Denetim yapılan şehir sayısı</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Şehir Bazlı Performans</div>
+                    <canvas id="cityChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Bölge Dağılımı</div>
+                    <canvas id="regionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- KARŞILAŞTIRMA TAB -->
+        <div id="comparison" class="tab-content">
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <label><strong>Mağaza 1:</strong></label>
+                    <select id="store1Select">
+                        <option value="">Mağaza Seçin</option>
+                    </select>
+                    <label><strong>Mağaza 2:</strong></label>
+                    <select id="store2Select">
+                        <option value="">Mağaza Seçin</option>
+                    </select>
+                    <button class="action-btn" onclick="compareStores()">Karşılaştır</button>
+                </div>
+            </div>
+
+            <div id="comparisonResult"></div>
+        </div>
+
+        <!-- İSTATİSTİKLER TAB -->
+        <div id="statistics" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card primary">
+                    <div class="kpi-title">Standart Sapma</div>
+                    <div class="kpi-value" id="stdDev">0</div>
+                    <div class="kpi-subtitle">Puan varyansı</div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="kpi-title">Medyan Puan</div>
+                    <div class="kpi-value" id="median">0</div>
+                    <div class="kpi-subtitle">Ortanca değer</div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-title">Mod Puan</div>
+                    <div class="kpi-value" id="mode">0</div>
+                    <div class="kpi-subtitle">En sık görülen puan</div>
+                </div>
+                <div class="kpi-card error">
+                    <div class="kpi-title">Aykırı Değerler</div>
+                    <div class="kpi-value" id="outliers">0</div>
+                    <div class="kpi-subtitle">Outlier sayısı</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Puan Dağılımı (Histogram)</div>
+                    <canvas id="histogramChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Box Plot Analizi</div>
+                    <canvas id="boxPlotChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAĞAZA LİGİ TAB -->
+        <div id="league" class="tab-content">
+            <div class="analysis-panel">
+                <h2 style="margin-bottom: 20px;">🏆 Mağaza Performans Ligi</h2>
+                <table class="league-table" id="leagueTable">
+                    <thead>
+                        <tr>
+                            <th>Sıra</th>
+                            <th>Mağaza</th>
+                            <th>Puan</th>
+                            <th>Rozetler</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOTOĞRAF GALERİSİ TAB -->
+        <div id="photos" class="tab-content">
+            <div class="analysis-panel">
+                <h2 style="margin-bottom: 20px;">📷 Denetim Fotoğrafları</h2>
+                <div class="filter-controls" style="margin-bottom: 20px;">
+                    <label><strong>Mağaza:</strong></label>
+                    <select id="photoStoreFilter" onchange="filterPhotos()">
+                        <option value="">Tüm Mağazalar</option>
+                    </select>
+                    <input type="file" id="photoUpload" accept="image/*" multiple style="display: none;">
+                    <button class="action-btn" onclick="document.getElementById('photoUpload').click()">📷 Fotoğraf Ekle</button>
+                </div>
+                <div class="photo-gallery" id="photoGallery">
+                    <div class="photo-item" style="display: flex; align-items: center; justify-content: center; color: #8E8E93;">
+                        <p>Henüz fotoğraf eklenmedi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="upload-section">
+        <div style="font-weight: 600; margin-bottom: 12px;">Excel Veri Yükleme</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+        <div>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Dosya Seç</button>
+            <button class="upload-btn" onclick="loadExcelData()">Yükle</button>
+        </div>
+        <div id="uploadStatus" style="color: #666;">Excel dosyanızı seçin</div>
+    </div>
+
+    <div id="storeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">×</span>
+            <h2 id="modalTitle">Mağaza Detayları</h2>
+            <div id="modalContent">İçerik yükleniyor...</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
